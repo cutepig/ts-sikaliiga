@@ -12,6 +12,7 @@ export interface IPlayer {
   id: string;
   name: string;
   age: number;
+  team?: string;
   position: PlayerPosition;
   attack: number;
   attackPotential: number;

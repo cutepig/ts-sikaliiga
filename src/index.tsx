@@ -1,14 +1,14 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import App from './App';
-import {createRandomPlayerPool} from './game/player';
+import {initGame} from './game/game';
 import './index.css';
 import registerServiceWorker from './registerServiceWorker';
 
-const playerPool = createRandomPlayerPool(50);
+const game = initGame();
 
 ReactDOM.render(
-  <App playerPool={playerPool} />,
+  <App game={game} />,
   document.getElementById('root') as HTMLElement
 );
 registerServiceWorker();

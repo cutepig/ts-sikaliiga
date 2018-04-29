@@ -1,22 +1,22 @@
-import * as React from 'react';
+import React from 'react';
 import './App.css';
-import {IPlayer} from './game/player';
+import {getFreeAgents, IGame} from './game/game';
+import {PlayerList} from './ui/PlayerList';
 
 interface IAppProps {
-  playerPool: IPlayer[];
+  game: IGame,
 }
+
 
 class App extends React.Component<IAppProps> {
   public render() {
-    const {playerPool} = this.props;
+    const {game} = this.props;
 
     return (
       <div className="App">
-        <ul>
-          {playerPool.map(player =>
-            <li key={player.id}>{player.name}</li>
-          )}
-        </ul>
+        <div className="App-players">
+          <PlayerList players={getFreeAgents(game.players)} />
+        </div>
       </div>
     );
   }
