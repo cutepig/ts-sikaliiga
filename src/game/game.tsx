@@ -1,11 +1,16 @@
+import {entityMapFromList, IEntityMap} from 'game/entity';
+import {createRandomPlayerPool, IPlayer} from 'game/player';
+import {ITeam} from 'game/team';
 import uuid from 'uuid/v4';
-import {entityMapFromList, IEntityMap} from './entity';
-import {createRandomPlayerPool, IPlayer} from './player';
-import {ITeam} from './team';
 
 export interface IGame {
   players: IEntityMap<IPlayer>;
   teams: IEntityMap<ITeam>;
+}
+
+export const defaultGame = {
+  players: {},
+  teams: {},
 }
 
 export const getFreeAgents = (players: IEntityMap<IPlayer>) =>
