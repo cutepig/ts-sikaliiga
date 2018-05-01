@@ -1,8 +1,0 @@
-{
-  "editor.formatOnSave": true,
-  "emmet.excludeLanguages": [
-    "markdown",
-    "typescript",
-    "typescriptreact"
-  ]
-}
