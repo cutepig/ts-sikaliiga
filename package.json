@@ -7,6 +7,7 @@
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
     "react-scripts-ts": "2.15.1",
+    "reset-css": "4.0.1",
     "uuid": "^3.2.1"
   },
   "scripts": {
@@ -22,6 +23,7 @@
     "@types/react-dom": "^16.0.5",
     "@types/uuid": "^3.4.3",
     "prettier": "^1.12.1",
+    "tachyons-generator": "0.22.1",
     "typescript": "^2.8.3"
   }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import produce from 'immer';
-import { IGame, defaultGame } from 'game/game';
+import {IGame, defaultGame} from 'game/game';
 
 type GameUpdateFn = (game: IGame) => void | IGame;
 
@@ -11,7 +11,7 @@ interface IGameContext {
 
 export const GameContext = React.createContext<IGameContext>({
   game: defaultGame,
-  update: () => console.warn('Game update called before initialization!') // tslint:disable-line no-console
+  update: () => console.warn('Game update called before initialization!'), // tslint:disable-line no-console
 });
 
 interface IGameProviderProps {
@@ -28,13 +28,13 @@ export class GameProvider extends React.Component<IGameProviderProps> {
 
   private update = (updateFn: GameUpdateFn) => {
     this.setState(produce(updateFn));
-  }
+  };
 
   public render() {
     return (
       <GameContext.Provider value={{game: this.state, update: this.update}}>
         {this.props.children}
       </GameContext.Provider>
-    )
+    );
   }
 }
