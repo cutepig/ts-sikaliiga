@@ -1,12 +1,18 @@
 import React from 'react';
 import {GameContext} from 'ui/GameContext';
-import {PlayerList} from 'ui/PlayerList';
-import {TeamView} from 'ui/TeamView';
-import {getFreeAgents, IGame} from 'game/game';
-import {IPlayer} from 'game/player';
+import {PlayerList} from 'ui/demo1/PlayerList';
+import {TeamView} from 'ui/demo1/TeamView';
+import {IGame, IPlayer, ITeam} from 'game/models';
+import {getFreeAgents} from 'game/game';
 import {mapEntities} from 'game/entity';
-import {ITeam} from 'game/team';
-import {initDemo1, assignPlayerToTeam, autoAssignFields, autoPopulateTeams} from 'game/demo1';
+import {
+  initDemo1,
+  assignPlayerToTeam,
+  autoAssignFields,
+  autoPopulateTeams,
+  simulateMatch,
+} from 'game/demo1';
+import {MatchResultsList} from 'ui/demo1/MatchResultsList';
 
 export class Demo1View extends React.Component<{}> {
   public state: {teamId?: string} = {};
@@ -37,8 +43,20 @@ export class Demo1View extends React.Component<{}> {
       <GameContext.Consumer>
         {({game, update}) => (
           <div className="Demo1View">
+            <button onClick={() => update(initDemo1)}>Demo 1</button>
+            <button disabled onClick={() => update(autoPopulateTeams)}>
+              Automaatti pelaajat
+            </button>
+            <button onClick={() => update(simulateMatch)}>Simuloi ottelu</button>
+
+            <div className="Demo1View-matches">
+              <MatchResultsList
+                matches={Object.keys(game.matches).map(matchId => game.matches[matchId])}
+              />
+            </div>
+
             <ul className="Demo1View-players">
-              {mapEntities(game.teams, team => (
+              {mapEntities<ITeam, any>(game.teams, team => (
                 <li key={team.id} onClick={() => this.onSelectTeam(team)}>
                   <TeamView
                     team={team}
@@ -50,16 +68,12 @@ export class Demo1View extends React.Component<{}> {
               ))}
             </ul>
 
-            <button onClick={() => update(autoPopulateTeams)}>Automaatti pelaajat</button>
-
             <div className="Demo1View-players">
               <PlayerList
                 players={getFreeAgents(game.players)}
                 onSelectPlayer={player => update(this.onSelectPlayer(player))}
               />
             </div>
-
-            <button onClick={() => update(initDemo1)}>Demo 1</button>
           </div>
         )}
       </GameContext.Consumer>

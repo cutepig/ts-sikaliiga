@@ -1,16 +1,18 @@
 import {playerPositionText, sortPlayers} from 'ui/utils';
 
 import React from 'react';
-import {IPlayer} from 'game/player';
+import {IPlayer} from 'game/models';
 
 interface IPlayerListProps {
   players: IPlayer[];
+  showStats?: boolean;
 
   onSelectPlayer?: (player: IPlayer) => void;
 }
 
 export const PlayerList: React.StatelessComponent<IPlayerListProps> = ({
   players,
+  showStats,
   onSelectPlayer,
 }) => (
   <table className="PlayerList">
@@ -24,6 +26,15 @@ export const PlayerList: React.StatelessComponent<IPlayerListProps> = ({
         <th>P</th>
         <th>❤</th>
         <th>🙂</th>
+        {showStats && (
+          <>
+            <th>PO</th>
+            <th>PST</th>
+            <th>TM</th>
+            <th>S</th>
+            <th>PM</th>
+          </>
+        )}
       </tr>
     </thead>
     <tbody>
@@ -37,6 +48,15 @@ export const PlayerList: React.StatelessComponent<IPlayerListProps> = ({
           <td>{Math.round(player.defense)}</td>
           <td>{Math.round(player.fitness)}</td>
           <td>{Math.round(player.morale)}</td>
+          {showStats && (
+            <>
+              <td>{player.stats.gamesPlayed}</td>
+              <td>{player.stats.goals + player.stats.assists}</td>
+              <td>{player.stats.goals}</td>
+              <td>{player.stats.assists}</td>
+              <td>{player.stats.goalsAgainst}</td>
+            </>
+          )}
         </tr>
       ))}
     </tbody>

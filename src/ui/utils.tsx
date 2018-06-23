@@ -1,4 +1,4 @@
-import {PlayerPosition, IPlayer} from 'game/player';
+import {PlayerPosition, IPlayer} from 'game/models';
 
 export function playerPositionText(position: PlayerPosition) {
   switch (position) {

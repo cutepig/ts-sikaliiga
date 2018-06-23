@@ -1,6 +1,7 @@
 import React from 'react';
 import produce from 'immer';
-import {IGame, defaultGame} from 'game/game';
+import {IGame} from 'game/models';
+import {defaultGame} from 'game/game';
 
 type GameUpdateFn = (game: IGame) => void | IGame;
 

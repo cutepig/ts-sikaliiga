@@ -1,7 +1,12 @@
 import React from 'react';
-import {IFields, DefenseFieldIndex, Field, ForwardFieldIndex} from 'game/team';
-import {IEntityMap} from 'game/entity';
-import {IPlayer} from 'game/player';
+import {
+  IEntityMap,
+  IFields,
+  IPlayer,
+  DefenseFieldIndex,
+  Field,
+  ForwardFieldIndex,
+} from 'game/models';
 
 interface IFieldList {
   fields: IFields;
@@ -26,7 +31,7 @@ export const FieldList: React.SFC<IFieldList> = ({fields, players}) => (
     <ul>
       <li>
         <h5>Goalie</h5>
-        <FieldView field={fields.goalie ? [fields.goalie] : undefined} players={players} />
+        <FieldView field={fields.goalieId ? [fields.goalieId] : undefined} players={players} />
       </li>
       <li>
         <h5>1 field</h5>

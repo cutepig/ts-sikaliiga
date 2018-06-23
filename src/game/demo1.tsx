@@ -1,16 +1,32 @@
-import {IGame} from 'game/game';
-import {entityMapFromList, mapEntities} from 'game/entity';
-import {createRandomPlayerPool, PlayerPosition, IPlayer} from 'game/player';
-import {createEmptyTeam, ITeam, DefenseFieldIndex, ForwardFieldIndex, Field} from 'game/team';
+import {
+  IGame,
+  IPlayer,
+  ITeam,
+  PlayerPosition,
+  DefenseFieldIndex,
+  ForwardFieldIndex,
+  Field,
+  IMatchTeam,
+} from 'game/models';
+import {entityMapFromList, entityMapToList, mapEntities} from 'game/entity';
+import {createRandomPlayerPool, getPlayerSkillForPosition} from 'game/player';
+import {createEmptyTeam} from 'game/team';
+import {createMatch} from 'game/match';
+import {simulateMHM2K} from 'game/simulation';
 
 export function initDemo1(): IGame {
   const players = createRandomPlayerPool(100);
   const teams = [createEmptyTeam('HIFK'), createEmptyTeam('Kärpät')];
 
-  return {
+  const game = {
     players: entityMapFromList(players),
     teams: entityMapFromList(teams),
+    matches: {},
   };
+
+  autoPopulateTeams(game);
+  mapEntities<ITeam, any>(game.teams, team => team).forEach(team => autoAssignFields(game, team));
+  return game;
 }
 
 export function autoPopulateTeams(game: IGame) {
@@ -59,8 +75,9 @@ export function findBestPlayer(position: PlayerPosition, players: IPlayer[]) {
       return best;
     }
 
-    const skill = player.attack + player.defense;
-    const bestSkill = best ? best.attack + best.defense : 0;
+    const skill = getPlayerSkillForPosition(position, player);
+    // TODO: Micro-optimization: Refactor this to precalculated value
+    const bestSkill = best ? getPlayerSkillForPosition(position, best) : 0;
 
     return skill > bestSkill ? player : best;
   }, null);
@@ -82,10 +99,10 @@ export function recruitBestPlayer(position: PlayerPosition, players: IPlayer[]) 
 }
 
 export function autoAssignFields(game: IGame, team: ITeam) {
-  const players = team.players.map(playerId => game.players[playerId]);
+  const players = team.playerIds.map(playerId => game.players[playerId]);
 
   const g = recruitBestPlayer(PlayerPosition.Goalie, players);
-  const goalie = g ? g.id : undefined;
+  const goalieId = g ? g.id : undefined;
 
   const defense: Field[] = [];
   for (let i = DefenseFieldIndex.Field1; i <= DefenseFieldIndex.Field3; i++) {
@@ -102,19 +119,52 @@ export function autoAssignFields(game: IGame, team: ITeam) {
     forwards.push([lw && lw.id, c && c.id, rw && rw.id]);
   }
 
-  game.teams[team.id].fields = {goalie, defense, forwards};
+  game.teams[team.id].fields = {goalieId, defense, forwards};
 }
 
 export function assignPlayerToTeam(game: IGame, playerId: string, teamId: string) {
-  const oldTeamId = game.players[playerId].team;
+  const oldTeamId = game.players[playerId].teamId;
 
   if (oldTeamId) {
-    const i = game.teams[oldTeamId].players.indexOf(playerId);
+    const i = game.teams[oldTeamId].playerIds.indexOf(playerId);
     if (i) {
-      game.teams[oldTeamId].players.splice(i, 1);
+      game.teams[oldTeamId].playerIds.splice(i, 1);
     }
   }
 
-  game.players[playerId].team = teamId;
-  game.teams[teamId].players.push(playerId);
+  game.players[playerId].teamId = teamId;
+  game.teams[teamId].playerIds.push(playerId);
+}
+
+export function simulateMatch(game: IGame) {
+  // When we have a concept of ISeason, we would have the matches prepopulated
+  // with the teams and referenced from the schedule. This probably means that
+  // we need 2 different data structures, IMatch and IMatchResult, or
+  // IScheduledMatch and IMatchResult (in addition to IMatch which could be
+  // purely internal)
+  const teamIds = Object.keys(game.teams);
+  const [homeTeam, awayTeam] = teamIds.map(teamId => game.teams[teamId]);
+
+  const match = createMatch(game, homeTeam, awayTeam);
+  const result = simulateMHM2K(game, match);
+
+  // FIXME: `homeTeam|awayTeam: fields` is an immer proxy
+  // tslint:disable-next-line:no-console
+  console.log('simulation done', result);
+
+  transferMatchTeam(result.homeTeam);
+  transferMatchTeam(result.awayTeam);
+  game.matches[match.id] = result;
+
+  function transferMatchTeam(matchTeam: IMatchTeam) {
+    entityMapToList(matchTeam.players).forEach(matchPlayer => {
+      const player = game.players[matchPlayer.id];
+      player.stats.gamesPlayed++;
+      player.stats.goals += matchPlayer.goals;
+      player.stats.goalsAgainst += matchPlayer.goalsAgainst;
+      player.stats.assists += matchPlayer.assists;
+      player.stats.shots += matchPlayer.shots;
+      player.stats.shotsAgainst += matchPlayer.shotsAgainst;
+    });
+  }
 }

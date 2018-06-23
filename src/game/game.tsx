@@ -1,18 +1,12 @@
-import {IEntityMap} from 'game/entity';
-import {IPlayer} from 'game/player';
-import {ITeam} from 'game/team';
+import {IEntityMap, IPlayer, IGame} from 'game/models';
 
-export interface IGame {
-  players: IEntityMap<IPlayer>;
-  teams: IEntityMap<ITeam>;
-}
-
-export const defaultGame = {
+export const defaultGame: IGame = {
   players: {},
   teams: {},
+  matches: {},
 };
 
 export const getFreeAgents = (players: IEntityMap<IPlayer>) =>
   Object.keys(players)
-    .filter(playerId => !players[playerId].team)
+    .filter(playerId => !players[playerId].teamId)
     .map(playerId => players[playerId]);

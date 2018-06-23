@@ -1,9 +1,9 @@
 import React from 'react';
+import {ITeam} from 'game/models';
 import {entitiesById} from 'game/entity';
-import {ITeam} from 'game/team';
 import {GameContext} from 'ui/GameContext';
-import {PlayerList} from 'ui/PlayerList';
-import {FieldList} from 'ui/FieldList';
+import {PlayerList} from 'ui/demo1/PlayerList';
+import {FieldList} from 'ui/demo1/FieldList';
 
 interface ITeamView {
   team: ITeam;
@@ -15,12 +15,14 @@ export const TeamView: React.SFC<ITeamView> = ({team, onAutoAssignFields}) => (
     {({game}) => (
       <div className="TeamView">
         <h2>{team.name}</h2>
-        <PlayerList players={entitiesById(game.players, team.players)} />
+        <PlayerList showStats players={entitiesById(game.players, team.playerIds)} />
 
         <FieldList fields={team.fields} players={game.players} />
 
         {onAutoAssignFields && (
-          <button onClick={() => onAutoAssignFields(team)}>Automaatti kentät</button>
+          <button disabled onClick={() => onAutoAssignFields(team)}>
+            Automaatti kentät
+          </button>
         )}
       </div>
     )}
