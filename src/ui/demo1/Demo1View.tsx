@@ -10,7 +10,7 @@ import {
   assignPlayerToTeam,
   autoAssignFields,
   autoPopulateTeams,
-  simulateMatch,
+  simulateNextMatch,
 } from 'game/demo1';
 import {MatchResultsList} from 'ui/demo1/MatchResultsList';
 
@@ -47,7 +47,7 @@ export class Demo1View extends React.Component<{}> {
             <button disabled onClick={() => update(autoPopulateTeams)}>
               Automaatti pelaajat
             </button>
-            <button onClick={() => update(simulateMatch)}>Simuloi ottelu</button>
+            <button onClick={() => update(simulateNextMatch)}>Simuloi ottelu</button>
 
             <div className="Demo1View-matches">
               <MatchResultsList

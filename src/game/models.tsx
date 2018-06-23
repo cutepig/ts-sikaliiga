@@ -92,16 +92,26 @@ export interface IFields {
   forwards: Field[];
 }
 
+export interface ITeamStats {
+  gamesPlayed: number;
+  wins: number;
+  ties: number;
+  losses: number;
+  goals: number;
+  goalsAgainst: number;
+}
+
 export interface ITeam {
   id: string;
   name: string;
   playerIds: string[];
   fields: IFields;
+  stats: ITeamStats;
 }
 
-// Match
+// Match simulation
 
-export interface IMatchPlayer {
+export interface IMatchSimulationPlayer {
   id: string; // Reflects player id
   position: PlayerPosition;
   teamId: string;
@@ -118,9 +128,9 @@ export interface IMatchPlayer {
   penalties: number;
 }
 
-export interface IMatchTeam {
+export interface IMatchSimulationTeam {
   id: string; // Reflects team id
-  players: IEntityMap<IMatchPlayer>;
+  players: IEntityMap<IMatchSimulationPlayer>;
   fields: IFields;
   goals: number;
   goalsAgainst: number;
@@ -128,7 +138,7 @@ export interface IMatchTeam {
   shotsAgainst: number;
 }
 
-export interface IMatchGoalEvent {
+export interface IMatchSimulationGoalEvent {
   type: 'goal';
   shooterId: string;
   assistIds: string[];
@@ -137,21 +147,43 @@ export interface IMatchGoalEvent {
   otherTeamId: string;
 }
 
-export type IMatchEvent = IMatchGoalEvent;
+export type IMatchSimulationEvent = IMatchSimulationGoalEvent;
 
-export interface IMatch {
+export interface IMatchSimulation {
   id: string;
-  homeTeam: IMatchTeam;
-  awayTeam: IMatchTeam;
+  homeTeam: IMatchSimulationTeam;
+  awayTeam: IMatchSimulationTeam;
   time: number;
   hasShootouts?: boolean;
-  events: IMatchEvent[];
+  events: IMatchSimulationEvent[];
 }
 
+// Schedule
+
+export interface IScheduleMatch {
+  id: string;
+  homeTeamId: string;
+  awayTeamId: string;
+}
+
+export type IScheduleRound = IScheduleMatch[];
+export type ISchedule = IScheduleRound[];
+
 // The game
+
+export const enum RoundState {
+  BeforeSimulating,
+  Simulating,
+  AfterSimulating,
+}
 
 export interface IGame {
   players: IEntityMap<IPlayer>;
   teams: IEntityMap<ITeam>;
-  matches: IEntityMap<IMatch>;
+  matches: IEntityMap<IMatchSimulation>;
+  // In the future this will be hidden under season
+  schedule: ISchedule;
+  // In the future will be hidden under season state or smth and be mandatory
+  currentRoundIndex?: number;
+  roundState?: RoundState;
 }

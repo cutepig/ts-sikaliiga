@@ -1,12 +1,12 @@
 import React from 'react';
-import {IMatch} from 'game/models';
+import {IMatchSimulation} from 'game/models';
 import {GameContext} from 'ui/GameContext';
 
 interface IMatchResultsList {
-  matches: IMatch[];
+  matches: IMatchSimulation[];
 }
 
-const renderMatchResultString = (match: IMatch) =>
+export const renderMatchResultString = (match: IMatchSimulation) =>
   `${match.homeTeam.goals} - ${match.awayTeam.goals}${
     match.hasShootouts ? ' (SO)' : match.time > 3600 ? ' (OT)' : ''
   }`;

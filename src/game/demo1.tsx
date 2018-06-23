@@ -6,13 +6,12 @@ import {
   DefenseFieldIndex,
   ForwardFieldIndex,
   Field,
-  IMatchTeam,
+  IMatchSimulationTeam,
 } from 'game/models';
 import {entityMapFromList, entityMapToList, mapEntities} from 'game/entity';
 import {createRandomPlayerPool, getPlayerSkillForPosition} from 'game/player';
 import {createEmptyTeam} from 'game/team';
-import {createMatch} from 'game/match';
-import {simulateMHM2K} from 'game/simulation';
+import {createMatchSimulation, simulateMatch} from 'game/simulation';
 
 export function initDemo1(): IGame {
   const players = createRandomPlayerPool(100);
@@ -22,6 +21,7 @@ export function initDemo1(): IGame {
     players: entityMapFromList(players),
     teams: entityMapFromList(teams),
     matches: {},
+    schedule: [],
   };
 
   autoPopulateTeams(game);
@@ -29,6 +29,7 @@ export function initDemo1(): IGame {
   return game;
 }
 
+// Assumes game state is in prestine state with no populated teams
 export function autoPopulateTeams(game: IGame) {
   const players = mapEntities(game.players, player => player);
   const teamIds = Object.keys(game.teams);
@@ -136,7 +137,37 @@ export function assignPlayerToTeam(game: IGame, playerId: string, teamId: string
   game.teams[teamId].playerIds.push(playerId);
 }
 
-export function simulateMatch(game: IGame) {
+export function transferMatchTeam(
+  game: IGame,
+  matchTeam: IMatchSimulationTeam,
+  otherMatchTeam: IMatchSimulationTeam,
+) {
+  const team = game.teams[matchTeam.id];
+
+  team.stats.gamesPlayed++;
+  if (matchTeam.goals > otherMatchTeam.goals) {
+    team.stats.wins++;
+  } else if (matchTeam.goals === otherMatchTeam.goals) {
+    team.stats.ties++;
+  } else if (matchTeam.goals < otherMatchTeam.goals) {
+    team.stats.losses++;
+  }
+
+  team.stats.goals += matchTeam.goals;
+  team.stats.goalsAgainst = matchTeam.goalsAgainst;
+
+  entityMapToList(matchTeam.players).forEach(matchPlayer => {
+    const player = game.players[matchPlayer.id];
+    player.stats.gamesPlayed++;
+    player.stats.goals += matchPlayer.goals;
+    player.stats.goalsAgainst += matchPlayer.goalsAgainst;
+    player.stats.assists += matchPlayer.assists;
+    player.stats.shots += matchPlayer.shots;
+    player.stats.shotsAgainst += matchPlayer.shotsAgainst;
+  });
+}
+
+export function simulateNextMatch(game: IGame) {
   // When we have a concept of ISeason, we would have the matches prepopulated
   // with the teams and referenced from the schedule. This probably means that
   // we need 2 different data structures, IMatch and IMatchResult, or
@@ -145,26 +176,14 @@ export function simulateMatch(game: IGame) {
   const teamIds = Object.keys(game.teams);
   const [homeTeam, awayTeam] = teamIds.map(teamId => game.teams[teamId]);
 
-  const match = createMatch(game, homeTeam, awayTeam);
-  const result = simulateMHM2K(game, match);
+  const match = createMatchSimulation(game, homeTeam, awayTeam);
+  const result = simulateMatch(game, match);
 
   // FIXME: `homeTeam|awayTeam: fields` is an immer proxy
   // tslint:disable-next-line:no-console
   console.log('simulation done', result);
 
-  transferMatchTeam(result.homeTeam);
-  transferMatchTeam(result.awayTeam);
+  transferMatchTeam(game, result.homeTeam, result.awayTeam);
+  transferMatchTeam(game, result.awayTeam, result.homeTeam);
   game.matches[match.id] = result;
-
-  function transferMatchTeam(matchTeam: IMatchTeam) {
-    entityMapToList(matchTeam.players).forEach(matchPlayer => {
-      const player = game.players[matchPlayer.id];
-      player.stats.gamesPlayed++;
-      player.stats.goals += matchPlayer.goals;
-      player.stats.goalsAgainst += matchPlayer.goalsAgainst;
-      player.stats.assists += matchPlayer.assists;
-      player.stats.shots += matchPlayer.shots;
-      player.stats.shotsAgainst += matchPlayer.shotsAgainst;
-    });
-  }
 }

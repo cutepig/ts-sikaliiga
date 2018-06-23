@@ -4,6 +4,7 @@ export const defaultGame: IGame = {
   players: {},
   teams: {},
   matches: {},
+  schedule: [],
 };
 
 export const getFreeAgents = (players: IEntityMap<IPlayer>) =>
