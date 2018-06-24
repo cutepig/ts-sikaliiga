@@ -4,6 +4,7 @@ import {createRandomPlayerPool} from 'game/player';
 import {createEmptyTeam} from 'game/team';
 import {autoPopulateTeams, autoAssignFields, transferMatchTeam} from 'game/demo1';
 import {createMatchSimulation, simulateMatch} from 'game/simulation';
+import {shuffle} from 'game/util';
 
 export function initDemo2(): IGame {
   const players = createRandomPlayerPool(1000);
@@ -40,6 +41,7 @@ export function initDemo2(): IGame {
 }
 
 export function roundRobin(teamIds: string[]): IScheduleRound[] {
+  // Thanks go to https://github.com/clux/roundrobin/blob/master/robin.js
   const rounds: IScheduleRound[] = [];
   // Insert a sentinel if number of teams is odd
   const [n, queue] =
@@ -67,16 +69,75 @@ export function roundRobin(teamIds: string[]): IScheduleRound[] {
   return rounds;
 }
 
-export function createSeasonSchedule(numRounds: number, teams: ITeam[]): ISchedule {
-  const rounds = roundRobin(teams.map(team => team.id));
-  let schedule: ISchedule = [];
+function optimizeHomeGames(teams: ITeam[], rounds: IScheduleRound[]) {
+  const optimizedRounds: IScheduleRound[] = [];
+  const homeMatchCounts = teams.reduce((acc, team) => ((acc[team.id] = 0), acc), {});
+  const streakCounters = {...homeMatchCounts};
 
-  for (let i = 0; i < numRounds; i++) {
-    schedule = schedule.concat(rounds);
+  for (let r = 0, len = rounds.length; r < len; r++) {
+    const round = rounds[r];
+    optimizedRounds.push([]);
+
+    for (let m = 0, len2 = round.length; m < len2; m++) {
+      const match = round[m];
+      const {homeTeamId, awayTeamId} = match;
+      const [optimizedHomeTeamId, optimizedAwayTeamId] =
+        homeMatchCounts[awayTeamId] < homeMatchCounts[homeTeamId] ||
+        streakCounters[awayTeamId] < streakCounters[homeTeamId] ||
+        (r % 2 === 1 &&
+          homeMatchCounts[homeTeamId] === homeMatchCounts[awayTeamId] &&
+          streakCounters[homeTeamId] === streakCounters[awayTeamId])
+          ? [awayTeamId, homeTeamId]
+          : [homeTeamId, awayTeamId];
+
+      optimizedRounds[r].push({
+        ...match,
+        homeTeamId: optimizedHomeTeamId,
+        awayTeamId: optimizedAwayTeamId,
+      });
+
+      homeMatchCounts[optimizedHomeTeamId]++;
+      streakCounters[optimizedHomeTeamId]++;
+      streakCounters[optimizedAwayTeamId]--;
+    }
   }
 
   // tslint:disable-next-line:no-console
-  console.log('Rounds', rounds);
+  console.log({homeMatchCounts, streakCounters});
+
+  return optimizedRounds;
+}
+
+export function createSeasonSchedule(numRevolutions: number, teams: ITeam[]): ISchedule {
+  const rounds = roundRobin(teams.map(team => team.id));
+  // tslint:disable-next-line:no-console
+  console.log('rounds', rounds);
+  const optimizedRounds = optimizeHomeGames(teams, rounds);
+  // tslint:disable-next-line:no-console
+  console.log('optimized rounds', optimizedRounds);
+  let schedule: ISchedule = [];
+
+  // Reverse games as well as home/away assignments
+  const reversedRounds: typeof optimizedRounds = [];
+  for (let i = optimizedRounds.length - 1; i >= 0; i--) {
+    reversedRounds.push(
+      optimizedRounds[i].map(match => ({
+        ...match,
+        homeTeamId: match.awayTeamId,
+        awayTeamId: match.homeTeamId,
+      })),
+    );
+  }
+
+  for (let i = 0; i < numRevolutions; i++) {
+    schedule = i % 2 === 0 ? schedule.concat(optimizedRounds) : schedule.concat(reversedRounds);
+  }
+
+  // Shuffle each round
+  for (let i = 0, len = schedule.length; i < len; i++) {
+    schedule[i] = shuffle(schedule[i]);
+  }
+
   return schedule;
 }
 
@@ -106,5 +167,16 @@ export function simulateCurrentRound(game: IGame) {
     transferMatchTeam(game, result.awayTeam, result.homeTeam);
     game.matches[match.id] = result;
     game.roundState = RoundState.AfterSimulating;
+  }
+}
+
+export function simulateSeason(game: IGame) {
+  for (
+    let currentRoundIndex = game.currentRoundIndex || 0;
+    currentRoundIndex < game.schedule.length;
+    currentRoundIndex++
+  ) {
+    game.currentRoundIndex = currentRoundIndex;
+    simulateCurrentRound(game);
   }
 }
